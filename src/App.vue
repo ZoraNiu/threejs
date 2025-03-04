@@ -32,7 +32,7 @@ const orbiter = new THREE.Mesh(
     map: orbiterTexture, 
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.8,
+    opacity: 1,
   })
 ) 
 //add to scene
@@ -50,9 +50,9 @@ document.body.appendChild(renderer.domElement)
 //orbitController
 const controls = new OrbitControls(camera, renderer.domElement)
 
-//gird ground
-const gridHelper = new THREE.GridHelper(50,50)
-scene.add(gridHelper)
+// //gird ground
+// const gridHelper = new THREE.GridHelper(50,50)
+// scene.add(gridHelper)
 
 //magenitic field line
 var ovalPoints = [];
@@ -79,8 +79,8 @@ var angle = Math.PI / 9
   }
 
   var geometry = new THREE.BufferGeometry().setFromPoints(ovalPoints);
-
   var arcgeometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+  
   var material = new THREE.LineBasicMaterial({ color: 0xffffff });
   
   var line = new THREE.LineLoop(geometry, material);
@@ -97,6 +97,7 @@ const controlData = {
   longitudeOfAscendingNode: 0, // 升交点经度 Ω
   argumentOfPeriapsis: 0,// 近地点幅角 ω
   meanAnomaly: 0,// 平近点角 M
+  isMove: false,//卫星是否移动
 }
 
 function orbiterMovement(){
@@ -132,32 +133,25 @@ function orbiterMovement(){
 
 const gui = new dat.GUI()
 const f = gui.addFolder('Control Data')
-//f.width(500); 
 f.add(controlData,"semi_majorAxis").min(10).max(25).step(1).name('Semi-major Axis (a)').onChange(orbiterMovement);
 f.add(controlData,"eccentricity").min(0).max(1).step(0.01).name('Eccentricity (e)').onChange(orbiterMovement);
 f.add(controlData,"inclinationAngle").min(0).max(90).step(1).name('Inclination Angle (i)').onChange(orbiterMovement);
 f.add(controlData,"longitudeOfAscendingNode").min(0).max(360).name('Longitude of Ascending Node (Ω)').onChange(orbiterMovement);
 f.add(controlData,"argumentOfPeriapsis").min(0).max(360).name('Argument of Periapsis (ω)').onChange(orbiterMovement);
-//f.add(controlData,"Field_Intensity",{Low:9,High:18})
-
-f.open
+f.add(controlData,"isMove")
+f.domElement.id = "gui"
+f.open()
 
 
 //move
-//let clock = new THREE.Clock()
 function animate(){
-  //orbiter
-  // const elapsed =  clock.getElapsedTime();
-  // let a = controlData.semi_majorAxis
-  // let b = Math.sqrt((1-Math.pow(controlData.eccentricity, 2))*a*a)
-  // let i = Math.toRadians(controlData.inclinationAngle)
-  // orbiter.position.x = Math.sin(elapsed)*(0.5+5*a)
-  // orbiter.position.z = Math.cos(elapsed)*(0.5+5*b)
-  // orbiter.position.y = 0
+   
+  if (controlData.isMove){
+    controlData.meanAnomaly += 0.2 //* elapsed; // 随时间增加平近点角
+    if (controlData.meanAnomaly > 360) controlData.meanAnomaly -= 360;
 
-
-  controlData.meanAnomaly += 0.2 //* elapsed; // 随时间增加平近点角
-  if (controlData.meanAnomaly > 360) controlData.meanAnomaly -= 360;
+  }
+  
 
   orbiterMovement()
 
@@ -185,5 +179,11 @@ animate()
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+#gui {
+  position: absolute;
+  right: 0;
+  width: 500px;
 }
 </style>
