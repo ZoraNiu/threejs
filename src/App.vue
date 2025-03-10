@@ -55,39 +55,113 @@ const controls = new OrbitControls(camera, renderer.domElement)
 // scene.add(gridHelper)
 
 //magenitic field line
-var ovalPoints = [];
-var arcPoints = [];
-var segments = 127; // Number of points to approximate the oval shape
-var angle = Math.PI / 9
-  //var angle = Math.PI / controlData.Field_Intensity
-  // Create points for the oval shape
-  for (var j = 1; j <= (Math.PI * 2)/ angle; j++){
-    for (var i = 0; i <= segments; i++) {
-      var ovalAngle = ((i / segments) * Math.PI * 2)+ Math.PI;
-      var x = (Math.cos(ovalAngle)*6 + 5) * (Math.cos(angle*j)); // x radius
-      var y = Math.sin(ovalAngle)*7; // y radius
-      var z = (Math.cos(ovalAngle)*6 + 5) * (Math.sin(angle*j));
-      ovalPoints.push(new THREE.Vector3(x, y, z));
+var currentLines = [];
+
+function removeAllLines() {
+  for (var i = 0; i < currentLines.length; i++) {
+    scene.remove(currentLines[i]); // 从场景中移除线条
+  }
+  currentLines = []; // 清空数组
+}
+
+function drawMagneticFieldLine(){
+  removeAllLines()
+
+  var ovalPoints = [];
+  var arcPoints = [];
+  var segments = 127; // Number of points to approximate the oval shape
+  var angle = Math.PI / 9
+    //var angle = Math.PI / controlData.Field_Intensity
+    // Create points for the oval shape
+    for (var j = 1; j <= (Math.PI * 2)/ angle; j++){
+      for (var i = 0; i <= segments; i++) {
+        var ovalAngle = ((i / segments) * Math.PI * 2)+ Math.PI;
+        var x = (Math.cos(ovalAngle)*6 + 5) * (Math.cos(angle*j)); // x radius
+        var y = Math.sin(ovalAngle)*7; // y radius
+        var z = (Math.cos(ovalAngle)*6 + 5) * (Math.sin(angle*j));
+        ovalPoints.push(new THREE.Vector3(x, y, z));
+      }
+      for (var c = segments; c >= 0; c--) {
+        var arcAngle = ((c / segments) * Math.PI)+Math.PI/2;
+        var u = (Math.cos(arcAngle)*6 +5) * (Math.cos(angle*j));
+        var v = Math.sin(arcAngle)*9; // y radius
+        var w = (Math.cos(arcAngle)*6 +5) * (Math.sin(angle*j));
+        arcPoints.push(new THREE.Vector3(u, v, w));
+      }
     }
-    for (var c = segments; c >= 0; c--) {
-      var arcAngle = ((c / segments) * Math.PI)+Math.PI/2;
-      var u = (Math.cos(arcAngle)*6 +5) * (Math.cos(angle*j));
-      var v = Math.sin(arcAngle)*9; // y radius
-      var w = (Math.cos(arcAngle)*6 +5) * (Math.sin(angle*j));
-      arcPoints.push(new THREE.Vector3(u, v, w));
+
+    var geometry = new THREE.BufferGeometry().setFromPoints(ovalPoints);
+    var arcgeometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+    
+    var material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    
+    var line = new THREE.LineLoop(geometry, material);
+    var arcline = new THREE.LineSegments(arcgeometry,material);
+    
+    scene.add(line);
+    scene.add(arcline);
+
+    currentLines.push(line);
+    currentLines.push(arcline);
+}
+
+  function updateMagneticFieldLine() {
+  // 移除旧的线条
+  removeAllLines()
+
+  var segmentsWind = 127;
+  var angleWind = Math.PI / 9;
+  var ovalPointsWind = [];
+  var arcPointsWind = [];
+  var arcPointsWind1 = [];
+
+  //重新生成磁感线
+  for (var d = 6 ; d <= (Math.PI * 1.4)/ angleWind; d++) {
+    for (var h = 0; h <= segmentsWind; h++) {
+      var ovalAngleWind = ((h / segmentsWind) * Math.PI * 2) + Math.PI;
+      var x1 = (Math.cos(ovalAngleWind) * 5 + 5) * (Math.cos(angleWind * d));
+      var y1 = Math.sin(ovalAngleWind) * 9;
+      var z1 = (Math.cos(ovalAngleWind) * 5 + 5) * (Math.sin(angleWind * d));
+      ovalPointsWind.push(new THREE.Vector3(x1, y1, z1));
     }
+
+    var geometryWind = new THREE.BufferGeometry().setFromPoints(ovalPointsWind);
+    var material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    var lineWind = new THREE.LineLoop(geometryWind, material);
+    scene.add(lineWind);
+    currentLines.push(lineWind);
   }
 
-  var geometry = new THREE.BufferGeometry().setFromPoints(ovalPoints);
-  var arcgeometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+  for (var k = 16 ; k <= (Math.PI * 2)/ angleWind; k++) { 
+    for (var g = segmentsWind; g >= 0; g--) {
+      var arcAngleWind = ((g / segmentsWind) * Math.PI) + Math.PI / 2;
+      var u1 = (Math.cos(arcAngleWind) * 23 + 19) * (Math.cos(angleWind * k));
+      var v1 = Math.sin(arcAngleWind) * 9;
+      var w1 = (Math.cos(arcAngleWind) * 23 + 19) * (Math.sin(angleWind * k));
+      arcPointsWind.push(new THREE.Vector3(u1, v1, w1));
+    }
+    var arcgeometryWind = new THREE.BufferGeometry().setFromPoints(arcPointsWind);
+    var arclineWind = new THREE.LineSegments(arcgeometryWind, material);
+    scene.add(arclineWind);
+    currentLines.push(arclineWind);
+  }
   
-  var material = new THREE.LineBasicMaterial({ color: 0xffffff });
-  
-  var line = new THREE.LineLoop(geometry, material);
-  var arcline = new THREE.LineSegments(arcgeometry,material);
-  
-  scene.add(line);
-  scene.add(arcline);
+  for (var l = 1 ; l <= (Math.PI * 0.3)/ angleWind; l++) {
+
+    for (var m = segmentsWind; m >= 0; m--) {
+      var arcAngleWind1 = ((m / segmentsWind) * Math.PI) + Math.PI / 2;
+      var u2 = (Math.cos(arcAngleWind1) * 23 + 19) * (Math.cos(angleWind * l));
+      var v2 = Math.sin(arcAngleWind1) * 9;
+      var w2 = (Math.cos(arcAngleWind1) * 23 + 19) * (Math.sin(angleWind * l));
+      arcPointsWind1.push(new THREE.Vector3(u2, v2, w2));
+    }
+    var arcgeometryWind1 = new THREE.BufferGeometry().setFromPoints(arcPointsWind1);
+    var arclineWind1 = new THREE.LineSegments(arcgeometryWind1, material);
+    scene.add(arclineWind1);
+    currentLines.push(arclineWind1);
+  }
+}
+
 
 //太阳风粒子系统
 const particleCount = 5000; // 粒子数量
@@ -227,7 +301,7 @@ const controlData = {
   argumentOfPeriapsis: 0,// 近地点幅角 ω
   meanAnomaly: 0,// 平近点角 M
   isMove: false,//卫星是否移动
-  solarWindIntensity: 1.0 // 太阳风强度
+  solarWindIntensity: 0 // 太阳风强度
 }
 
 function orbiterMovement(){
@@ -269,13 +343,23 @@ f.add(controlData,"inclinationAngle").min(0).max(90).step(1).name('Inclination A
 f.add(controlData,"longitudeOfAscendingNode").min(0).max(360).name('Longitude of Ascending Node (Ω)').onChange(orbiterMovement);
 f.add(controlData,"argumentOfPeriapsis").min(0).max(360).name('Argument of Periapsis (ω)').onChange(orbiterMovement);
 f.add(controlData,"isMove").name('Move Satellite');
-f.add(controlData,"solarWindIntensity").min(0.1).max(3).step(0.1).name('Solar Wind Intensity');
+f.add(controlData,"solarWindIntensity").min(0).max(3).step(0.1).name('Solar Wind Intensity').onChange(function (value) {
+  if (value < 0.8) {
+    drawMagneticFieldLine();
+  } else {
+    updateMagneticFieldLine();
+  }
+});
 f.domElement.id = "gui"
 f.open()
 
+if (controlData.solarWindIntensity < 1){
+  drawMagneticFieldLine()
+}
+
 // 检测粒子与地球的碰撞并创建碰撞效果
 function checkCollisions() {
-  const earthRadius = 5; // 地球半径
+  const earthRadius = 10; // 地球半径
   const positions = particles.attributes.position.array;
   const impactPositions = impactParticles.attributes.position.array;
   const impactSizes = impactParticles.attributes.size.array;
@@ -334,7 +418,7 @@ function animate(){
     controlData.meanAnomaly += 0.2;
     if (controlData.meanAnomaly > 360) controlData.meanAnomaly -= 360;
   }
-
+  
   // 更新太阳风粒子
   const positions = particles.attributes.position.array;
   for (let i = 0; i < particleCount; i++) {
