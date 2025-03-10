@@ -78,16 +78,75 @@ var angle = Math.PI / 9
     }
   }
 
-  var geometry = new THREE.BufferGeometry().setFromPoints(ovalPoints);
-  var arcgeometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+var geometry = new THREE.BufferGeometry().setFromPoints(ovalPoints);
+var arcgeometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+
+var material = new THREE.LineBasicMaterial({ color: 0xffffff });
+
+var line = new THREE.LineLoop(geometry, material);
+var arcline = new THREE.LineSegments(arcgeometry,material);
+
+scene.add(line);
+scene.add(arcline);
+
+function updateMagneticFieldLine() {
+  // 移除旧的线条
+  scene.remove(line);
+  scene.remove(arcline);
+
+  var segmentsWind = 127;
+  var angleWind = Math.PI / 9;
+  var ovalPointsWind = [];
+  var arcPointsWind = [];
+  var arcPointsWind1 = [];
+
+  // 生成多条磁感线
+  for (var d = 6 ; d <= (Math.PI * 1.4)/ angleWind; d++) {
+    for (var h = 0; h <= segmentsWind; h++) {
+      var ovalAngleWind = ((h / segmentsWind) * Math.PI * 2) + Math.PI;
+      var x1 = (Math.cos(ovalAngleWind) * 5 + 5) * (Math.cos(angleWind * d));
+      var y1 = Math.sin(ovalAngleWind) * 9;
+      var z1 = (Math.cos(ovalAngleWind) * 5 + 5) * (Math.sin(angleWind * d));
+      ovalPointsWind.push(new THREE.Vector3(x1, y1, z1));
+    }
+
+    var geometryWind = new THREE.BufferGeometry().setFromPoints(ovalPointsWind);
+    var material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    var lineWind = new THREE.LineLoop(geometryWind, material);
+    scene.add(lineWind);
+
+  }
+
+  for (var k = 16 ; k <= (Math.PI * 2)/ angleWind; k++) {
+
+    for (var g = segmentsWind; g >= 0; g--) {
+      var arcAngleWind = ((g / segmentsWind) * Math.PI) + Math.PI / 2;
+      var u1 = (Math.cos(arcAngleWind) * 23 + 19) * (Math.cos(angleWind * k));
+      var v1 = Math.sin(arcAngleWind) * 9;
+      var w1 = (Math.cos(arcAngleWind) * 23 + 19) * (Math.sin(angleWind * k));
+      arcPointsWind.push(new THREE.Vector3(u1, v1, w1));
+    }
+    var arcgeometryWind = new THREE.BufferGeometry().setFromPoints(arcPointsWind);
+    var arclineWind = new THREE.LineSegments(arcgeometryWind, material);
+    scene.add(arclineWind);
+  }
   
-  var material = new THREE.LineBasicMaterial({ color: 0xffffff });
-  
-  var line = new THREE.LineLoop(geometry, material);
-  var arcline = new THREE.LineSegments(arcgeometry,material);
-  
-  scene.add(line);
-  scene.add(arcline);
+  for (var l = 1 ; l <= (Math.PI * 0.3)/ angleWind; l++) {
+
+    for (var m = segmentsWind; m >= 0; m--) {
+      var arcAngleWind1 = ((m / segmentsWind) * Math.PI) + Math.PI / 2;
+      var u2 = (Math.cos(arcAngleWind1) * 23 + 19) * (Math.cos(angleWind * l));
+      var v2 = Math.sin(arcAngleWind1) * 9;
+      var w2 = (Math.cos(arcAngleWind1) * 23 + 19) * (Math.sin(angleWind * l));
+      arcPointsWind1.push(new THREE.Vector3(u2, v2, w2));
+    }
+    var arcgeometryWind1 = new THREE.BufferGeometry().setFromPoints(arcPointsWind1);
+    var arclineWind1 = new THREE.LineSegments(arcgeometryWind1, material);
+    scene.add(arclineWind1);
+  }
+}
+
+
 
 //orbitor control dat.GUI
 const controlData = {
@@ -145,20 +204,23 @@ f.open()
 
 //move
 function animate(){
-   
+  requestAnimationFrame(animate)
+
   if (controlData.isMove){
     controlData.meanAnomaly += 0.2 //* elapsed; // 随时间增加平近点角
-    if (controlData.meanAnomaly > 360) controlData.meanAnomaly -= 360;
-
+    if (controlData.meanAnomaly > 360) controlData.meanAnomaly -= 360; 
   }
   
+  if(controlData.longitudeOfAscendingNode !== 0){
+    updateMagneticFieldLine();
+  }
 
   orbiterMovement()
 
   orbiter.lookAt(camera.position);
 
   //earth
-  requestAnimationFrame(animate)
+  
   sphere.rotation.y -= 0.001
 
   //orbitControllerUpdate
